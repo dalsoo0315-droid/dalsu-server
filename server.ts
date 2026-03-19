@@ -154,14 +154,17 @@ async function startServer() {
     }
   });
 
-  app.get("/api/technicians/:id/profile", (req, res) => {
-    const profile = db.prepare("SELECT * FROM technician_profiles WHERE user_id = ?").get(req.params.id) as any;
-    if (profile) {
-      res.json({ ...profile, badges: JSON.parse(profile.badges), equipment: JSON.parse(profile.equipment) });
-    } else {
-      res.status(404).json({ error: "Profile not found" });
-    }
-  });
+  app.get("/api/requests/pending", (req, res) => {
+  const requests = db.prepare(`
+    SELECT r.*, u.name as customer_name, u.phone as customer_phone
+    FROM service_requests r
+    JOIN users u ON r.user_id = u.id
+    WHERE r.status = 'PENDING'
+    ORDER BY r.created_at DESC
+  `).all();
+
+  res.json(requests);
+});
 
   app.get("/api/users/:id", (req, res) => {
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.params.id);
