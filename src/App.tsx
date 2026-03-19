@@ -1840,12 +1840,19 @@ const TechnicianDashboard = ({ user, onLogout }: { user: UserType, onLogout: () 
       const addedRequests = data.filter((req: any) => !prevIds.includes(req.id));
 
       if (addedRequests.length > 0) {
-        setHasNewRequest(true);
+  setHasNewRequest(true);
 
-        if (showAlert) {
-          alert(`새 예약이 ${addedRequests.length}건 들어왔습니다.`);
-        }
-      }
+  if (showAlert) {
+    try {
+      const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+      audio.play().catch(() => {});
+    } catch (e) {
+      console.error("알림음 재생 실패:", e);
+    }
+
+    alert(`새 예약이 ${addedRequests.length}건 들어왔습니다.`);
+  }
+}
 
       prevIdsRef.current = newIds;
     } catch (error) {
