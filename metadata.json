@@ -1,0 +1,8 @@
+{
+  "name": "달수배관케어",
+  "description": "AI-powered Korean plumbing management platform with technician verification, B2B dashboards, and subscription services.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}

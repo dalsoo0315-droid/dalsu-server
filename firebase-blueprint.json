@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "role": { "type": "string", "enum": ["customer", "technician", "admin", "b2b"], "description": "User role" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "name": { "type": "string", "description": "User display name" },
+        "location": { "type": "string", "description": "User primary location" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Registration date" }
+      },
+      "required": ["uid", "role", "phone", "name"]
+    },
+    "ServiceRequest": {
+      "title": "ServiceRequest",
+      "description": "A request for plumbing service",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "ID of the customer" },
+        "category": { "type": "string", "description": "Service category (e.g., toilet, sink)" },
+        "location": { "type": "string", "description": "Service location" },
+        "urgency": { "type": "string", "description": "Urgency level" },
+        "mediaUrl": { "type": "string", "description": "Uploaded photo/video URL" },
+        "status": { "type": "string", "enum": ["PENDING", "QUOTED", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"], "description": "Request status" },
+        "diagnosisId": { "type": "string", "description": "Linked AI diagnosis ID" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation date" }
+      },
+      "required": ["userId", "category", "location", "urgency", "status"]
+    },
+    "DiagnosisResult": {
+      "title": "DiagnosisResult",
+      "description": "AI diagnosis result",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "ID of the user" },
+        "category": { "type": "string", "description": "Service category" },
+        "data": { "type": "object", "description": "AI result data" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation date" }
+      },
+      "required": ["userId", "category", "data"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/requests/{requestId}": {
+      "schema": "ServiceRequest",
+      "description": "Service requests"
+    },
+    "/diagnosis/{diagnosisId}": {
+      "schema": "DiagnosisResult",
+      "description": "AI diagnosis results"
+    }
+  }
+}
