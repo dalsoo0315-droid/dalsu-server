@@ -1817,12 +1817,52 @@ const CustomerDashboard = ({ user, onLogout, onLogin }: { user: UserType | null,
 const TechnicianDashboard = ({ user, onLogout }: { user: UserType, onLogout: () => void }) => {
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasNewRequest, setHasNewRequest] = useState(false);
+
+  const firstLoadRef = React.useRef(true);
+  const prevIdsRef = React.useRef<number[]>([]);
+
+  const loadPendingRequests = async (showAlert = true) => {
+    try {
+      const data = await api.getPendingRequests();
+      setRequests(data);
+
+      const newIds = data.map((req: any) => req.id);
+      const prevIds = prevIdsRef.current;
+
+      if (firstLoadRef.current) {
+        prevIdsRef.current = newIds;
+        firstLoadRef.current = false;
+        setLoading(false);
+        return;
+      }
+
+      const addedRequests = data.filter((req: any) => !prevIds.includes(req.id));
+
+      if (addedRequests.length > 0) {
+        setHasNewRequest(true);
+
+        if (showAlert) {
+          alert(`새 예약이 ${addedRequests.length}건 들어왔습니다.`);
+        }
+      }
+
+      prevIdsRef.current = newIds;
+    } catch (error) {
+      console.error("대기 요청 불러오기 실패:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    api.getPendingRequests().then(data => {
-      setRequests(data);
-      setLoading(false);
-    });
+    loadPendingRequests(false);
+
+    const interval = setInterval(() => {
+      loadPendingRequests(true);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -1842,6 +1882,7 @@ const TechnicianDashboard = ({ user, onLogout }: { user: UserType, onLogout: () 
             <LogOut className="w-5 h-5" />
           </button>
         </div>
+
         <div className="flex gap-4">
           <div className="flex-1 bg-white/10 p-3 rounded-xl">
             <p className="text-[10px] text-white/60 uppercase font-bold">오늘 수익</p>
@@ -1855,9 +1896,35 @@ const TechnicianDashboard = ({ user, onLogout }: { user: UserType, onLogout: () 
       </header>
 
       <main className="p-6 space-y-6">
+        {hasNewRequest && (
+          <div className="bg-red-500 text-white px-4 py-3 rounded-2xl shadow-lg flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              <span className="font-bold text-sm">새 예약이 들어왔습니다</span>
+            </div>
+            <button
+              onClick={() => setHasNewRequest(false)}
+              className="text-xs font-bold bg-white/20 px-3 py-1 rounded-lg"
+            >
+              확인
+            </button>
+          </div>
+        )}
+
         <div className="flex justify-between items-center">
           <h3 className="font-bold text-gray-800">실시간 호출 현황</h3>
-          <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">영업 중</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setHasNewRequest(false);
+                loadPendingRequests(false);
+              }}
+              className="text-xs font-bold text-[#002B5B] bg-white px-3 py-1 rounded-lg border border-gray-200"
+            >
+              새로고침
+            </button>
+            <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">영업 중</span>
+          </div>
         </div>
 
         {loading ? (
@@ -1866,7 +1933,7 @@ const TechnicianDashboard = ({ user, onLogout }: { user: UserType, onLogout: () 
           <div className="text-center py-12 text-gray-400">현재 대기 중인 요청이 없습니다.</div>
         ) : (
           <div className="space-y-4">
-            {requests.map((req) => (
+            {requests.map((req: any) => (
               <Card key={req.id} className="p-5">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -1879,13 +1946,52 @@ const TechnicianDashboard = ({ user, onLogout }: { user: UserType, onLogout: () 
                   </div>
                   <p className="text-xs text-gray-400">{new Date(req.created_at).toLocaleTimeString()}</p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                  <MapPin className="w-4 h-4" />
-                  <span>{req.location}</span>
+
+                <div className="space-y-2 mb-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>{req.location}</span>
+                  </div>
+
+                  {req.customer_name && (
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      <span>{req.customer_name}</span>
+                    </div>
+                  )}
+
+                  {req.customer_phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      <span>{req.customer_phone}</span>
+                    </div>
+                  )}
                 </div>
+
                 <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1 py-2 text-sm">상세보기</Button>
-                  <Button className="flex-1 py-2 text-sm" onClick={() => alert('수락되었습니다. 고객님께 이동 중 메시지가 전송됩니다.')}>수락하기</Button>
+                  {req.customer_phone ? (
+                    <Button
+                      variant="outline"
+                      className="flex-1 py-2 text-sm"
+                      onClick={() => window.location.href = `tel:${req.customer_phone}`}
+                    >
+                      전화걸기
+                    </Button>
+                  ) : (
+                    <Button variant="outline" className="flex-1 py-2 text-sm">
+                      상세보기
+                    </Button>
+                  )}
+
+                  <Button
+                    className="flex-1 py-2 text-sm"
+                    onClick={() => {
+                      setHasNewRequest(false);
+                      alert('수락되었습니다. 고객에게 직접 전화로 안내해주세요.');
+                    }}
+                  >
+                    수락하기
+                  </Button>
                 </div>
               </Card>
             ))}
