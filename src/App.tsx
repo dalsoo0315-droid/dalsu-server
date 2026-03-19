@@ -1118,37 +1118,35 @@ const CustomerDashboard = ({ user, onLogout, onLogin }: { user: UserType | null,
                 <CheckCircle2 className="w-12 h-12 text-green-600" />
               </div>
               <h3 className="text-2xl font-black text-[#002B5B] mb-2">예약이 확정되었습니다!</h3>
-              <p className="text-gray-500 mb-8 px-6">
-                {successType === 'auto' 
-                  ? '가장 가까운 전문 기사님께 고객님의 정보가 전달되었습니다. 잠시 후 기사님이 직접 연락드릴 예정입니다.' 
-                  : '견적 요청이 성공적으로 전송되었습니다. 기사님들이 견적을 보내면 알림으로 알려드릴게요.'}
-              </p>
+<p className="text-gray-500 mb-8 px-6 leading-relaxed">
+  {successType === 'auto' 
+    ? '가장 가까운 전문 기사님께 정보를 전달해드렸습니다. 잠시 후 기사님이 직접 연락드릴 것입니다.' 
+    : '견적 요청이 성공적으로 전송되었습니다. 기사님들이 견적을 보내면 알림으로 알려드릴게요.'}
+</p>
 
-              {successType === 'auto' && (
-                <Card className="w-full p-6 mb-8 bg-blue-50 border-blue-100">
-                  <div className="flex items-center gap-4 text-left">
-                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                      <User className="w-8 h-8 text-[#002B5B]" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">배정된 마스터</p>
-                      <h4 className="text-lg font-bold text-[#002B5B]">{assignedTechnician?.name || '김달수 마스터 (베테랑)'}</h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs bg-white px-2 py-0.5 rounded text-gray-600 font-medium">평점 {assignedTechnician?.rating || '4.9'}</span>
-                        <span className="text-xs bg-white px-2 py-0.5 rounded text-gray-600 font-medium">경력 {assignedTechnician?.exp || '15년'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-6 grid grid-cols-2 gap-3">
-                    <Button variant="outline" className="bg-white" onClick={() => window.location.href = 'tel:01044993866'}>
-                      <Phone className="w-4 h-4 mr-2" /> 전화하기
-                    </Button>
-                    <Button variant="outline" className="bg-white" onClick={() => window.location.href = 'sms:01044993866'}>
-                      <MessageSquare className="w-4 h-4 mr-2" /> 메시지
-                    </Button>
-                  </div>
-                </Card>
-              )}
+{successType === 'auto' && (
+  <Card className="w-full p-6 mb-8 bg-blue-50 border-blue-100">
+    <div className="flex items-start gap-4 text-left">
+      <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+        <CheckCircle2 className="w-8 h-8 text-[#002B5B]" />
+      </div>
+
+      <div className="flex-1">
+        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">접수 완료</p>
+        <h4 className="text-lg font-bold text-[#002B5B] mt-1">전문 기사님에게 순차 전달 중</h4>
+        <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+          접수된 내용을 바탕으로 가장 적합한 전문 기사님이 확인 후 직접 연락드릴 예정입니다.
+        </p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="text-xs bg-white px-3 py-1 rounded-full text-gray-600 font-medium">실시간 접수</span>
+          <span className="text-xs bg-white px-3 py-1 rounded-full text-gray-600 font-medium">순차 확인 중</span>
+          <span className="text-xs bg-white px-3 py-1 rounded-full text-gray-600 font-medium">연락 예정</span>
+        </div>
+      </div>
+    </div>
+  </Card>
+)}
 
               <div className="w-full space-y-3">
                 <Button className="w-full py-4" onClick={() => setStep('history')}>
