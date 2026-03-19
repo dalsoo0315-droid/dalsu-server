@@ -4,14 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
-    "build": "vite build",
-    "cap:sync": "npx cap sync",
-    "cap:open": "npx cap open android",
-    "preview": "vite preview",
-    "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
-  },
+  "dev": "tsx server.ts",
+  "start": "tsx server.ts",
+  "build": "vite build",
+  "cap:sync": "npx cap sync",
+  "cap:open": "npx cap open android",
+  "preview": "vite preview",
+  "clean": "rm -rf dist",
+  "lint": "tsc --noEmit"
+}
   "dependencies": {
     "@capacitor/android": "^8.2.0",
     "@capacitor/cli": "^8.2.0",
