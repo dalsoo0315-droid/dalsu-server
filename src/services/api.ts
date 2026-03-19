@@ -1,6 +1,6 @@
 import { User, DiagnosisResult, ServiceRequest } from '../types';
 
-const API_BASE_URL = 'https://ais-dev-yho5gzytqgu4verwcmm356-29240700903.asia-northeast1.run.app';
+const API_BASE_URL = '';
 
 export const api = {
   login: async (phone: string, role: string = 'customer'): Promise<User> => {
