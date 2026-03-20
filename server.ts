@@ -3,7 +3,9 @@ import { createServer as createViteServer } from "vite";
 import Database from "better-sqlite3";
 import path from "path";
 import multer from "multer";
+import cors from "cors";
 import { GoogleGenAI } from "@google/genai";
+
 const db = new Database("dalsu.db");
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -135,6 +137,17 @@ if (userCount.count === 0) {
 
 async function startServer() {
   const app = express();
+
+  app.use(cors({
+    origin: [
+      "https://dalsu-server.onrender.com",
+      "http://localhost",
+      "capacitor://localhost"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  }));
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
