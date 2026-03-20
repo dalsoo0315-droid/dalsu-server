@@ -2,9 +2,25 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import Database from "better-sqlite3";
 import path from "path";
-
+import multer from "multer";
+import { GoogleGenAI } from "@google/genai";
 const db = new Database("dalsu.db");
+const upload = multer({ storage: multer.memoryStorage() });
 
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY || "",
+});
+
+function fileToInlinePart(file?: Express.Multer.File) {
+  if (!file) return null;
+
+  return {
+    inlineData: {
+      data: file.buffer.toString("base64"),
+      mimeType: file.mimetype,
+    },
+  };
+}
 // Initialize Database
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -120,6 +136,7 @@ if (userCount.count === 0) {
 async function startServer() {
   const app = express();
   app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
   // API Routes
   app.post("/api/auth/login", (req, res) => {
@@ -153,7 +170,126 @@ async function startServer() {
       res.json(newUser);
     }
   });
+app.post("/api/ai/chat", async (req, res) => {
+  try {
+    const { message, history = [] } = req.body;
 
+    if (!message) {
+      return res.status(400).json({ error: "message는 필수입니다." });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "서버에 GEMINI_API_KEY가 설정되지 않았습니다." });
+    }
+
+    const historyText = Array.isArray(history)
+      ? history
+          .map((item: any) => `${item.role === "user" ? "사용자" : "AI"}: ${item.text}`)
+          .join("\n")
+      : "";
+
+    const prompt = `
+너는 달수배관케어 고객상담 AI다.
+짧고 친절하고 이해하기 쉽게 한국어로 답해라.
+
+이전 대화:
+${historyText}
+
+사용자 질문:
+${message}
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-lite",
+      contents: prompt,
+    });
+
+    return res.json({
+      response: response.text || "죄송합니다. 답변을 생성하지 못했습니다.",
+    });
+  } catch (error: any) {
+    console.error("AI chat error:", error);
+    return res.status(500).json({
+      error: "AI 채팅 중 오류가 발생했습니다.",
+      detail: error?.message || "unknown error",
+    });
+  }
+});
+app.post("/api/ai/diagnose", upload.single("file"), async (req, res) => {
+  try {
+    const { symptoms, category } = req.body;
+    const file = req.file;
+
+    if (!symptoms || !category) {
+      return res.status(400).json({ error: "symptoms와 category는 필수입니다." });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "서버에 GEMINI_API_KEY가 설정되지 않았습니다." });
+    }
+
+    const prompt = `
+너는 배관 및 생활 설비 문제를 분석하는 전문가다.
+사용자가 입력한 증상과 카테고리를 바탕으로 아래 JSON 형식으로만 응답해라.
+설명 문장 없이 순수 JSON만 반환해라.
+
+필드 형식:
+{
+  "urgencyLevel": "LOW | MEDIUM | HIGH | CRITICAL",
+  "possibleCauses": [
+    { "cause": "원인명", "probability": 0~100 숫자 }
+  ],
+  "estimatedPriceRange": {
+    "min": 숫자,
+    "max": 숫자
+  },
+  "advice": "고객에게 보여줄 짧고 이해하기 쉬운 조언"
+}
+
+카테고리: ${category}
+증상: ${symptoms}
+`;
+
+    const parts: any[] = [{ text: prompt }];
+
+    const inlineFile = fileToInlinePart(file);
+    if (inlineFile) {
+      parts.push(inlineFile);
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-lite",
+      contents: [
+        {
+          role: "user",
+          parts,
+        },
+      ],
+    });
+
+    const text = response.text?.trim() || "";
+
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      const cleaned = text
+        .replace(/^```json\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+      parsed = JSON.parse(cleaned);
+    }
+
+    return res.json(parsed);
+  } catch (error: any) {
+    console.error("AI diagnose error:", error);
+    return res.status(500).json({
+      error: "AI 진단 중 오류가 발생했습니다.",
+      detail: error?.message || "unknown error",
+    });
+  }
+});
   app.get("/api/requests/pending", (req, res) => {
   const requests = db.prepare(`
     SELECT r.*, u.name as customer_name, u.phone as customer_phone
